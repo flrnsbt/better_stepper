@@ -81,6 +81,8 @@ import 'package:flutter/material.dart'
         immutable,
         kThemeAnimationDuration
     hide Stepper, Step;
+import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart';
 
 //   * mobile horizontal mode with adding/removing steps
 //   * alternative labeling
@@ -388,7 +390,6 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
   void dispose() {
     _scrollTimer?.cancel();
     _controller.dispose();
-    _bottomPadding.dispose();
     super.dispose();
   }
 
@@ -832,8 +833,21 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
   }
 
   final _heights = <int, double>{};
+  double _initialOffset = 0;
+
+  double _getInitialOffset() {
+    if (_initialOffset == 0) {
+      return _initialOffset;
+    }
+    final firstStepRenderBox =
+        _keys[0].currentContext?.findRenderObject() as RenderBox?;
+    final firstStepPosition = firstStepRenderBox?.localToGlobal(Offset.zero);
+    _initialOffset = firstStepPosition?.dy ?? 0;
+    return _initialOffset;
+  }
+
   void _scrollTo(int index) {
-    double offset = 0;
+    double offset = _getInitialOffset();
     for (int i = 0; i < index; i++) {
       final height = _heights[i] ?? _keys[i].currentContext?.size?.height ?? 0;
       _heights[i] = height;
@@ -852,49 +866,48 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
   Timer? _scrollTimer;
 
   final _controller = ScrollController();
-  final _bottomPadding = ValueNotifier(0.0);
 
   Widget _buildVertical() {
-    return ListView(
-      controller: _controller,
-      shrinkWrap: true,
-      padding: EdgeInsets.zero,
-      physics: widget.physics ?? const ClampingScrollPhysics(),
-      children: <Widget>[
-        for (int i = 0; i < widget.steps.length; i += 1)
-          Column(
-            children: <Widget>[
-              InkWell(
-                onTap: widget.steps[i].state != BetterStepState.disabled
-                    ? () {
-                        // In the vertical case we need to scroll to the newly tapped
-                        // step.
-                        if (widget.currentStep != i) {
-                          if (widget.onStepTapped != null) {
-                            widget.onStepTapped!(i);
-                            _scrollTo(i);
+    return NotificationListener<ScrollUpdateNotification>(
+      onNotification: (notification) {
+        if (notification.dragDetails != null) {
+          _cancelTimers();
+        }
+        return false;
+      },
+      child: ListView(
+        controller: _controller,
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
+        physics: widget.physics ?? const ClampingScrollPhysics(),
+        children: <Widget>[
+          for (int i = 0; i < widget.steps.length; i += 1)
+            Column(
+              children: <Widget>[
+                InkWell(
+                  onTap: widget.steps[i].state != BetterStepState.disabled
+                      ? () {
+                          // In the vertical case we need to scroll to the newly tapped
+                          // step.
+                          if (widget.currentStep != i) {
+                            if (widget.onStepTapped != null) {
+                              widget.onStepTapped!(i);
+                              _scrollTo(i);
+                            }
+                          } else {
+                            widget.onStepTapped!(null);
                           }
-                        } else {
-                          widget.onStepTapped!(null);
                         }
-                      }
-                    : null,
-                canRequestFocus:
-                    widget.steps[i].state != BetterStepState.disabled,
-                child: _buildVerticalHeader(i),
-              ),
-              _buildVerticalBody(i),
-            ],
-          ),
-        ValueListenableBuilder(
-          valueListenable: _bottomPadding,
-          builder: (context, value, child) {
-            return SizedBox(
-              height: value,
-            );
-          },
-        )
-      ],
+                      : null,
+                  canRequestFocus:
+                      widget.steps[i].state != BetterStepState.disabled,
+                  child: _buildVerticalHeader(i),
+                ),
+                _buildVerticalBody(i),
+              ],
+            ),
+        ],
+      ),
     );
   }
 

@@ -54,6 +54,9 @@ class _MyWidgetState extends State<MyWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
         body: BetterStepper(
+      controlsBuilder: (context, details) {
+        return SizedBox();
+      },
       steps: steps,
       currentStep: _currentStep,
       onStepTapped: (value) {
