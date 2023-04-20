@@ -389,7 +389,6 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
   @override
   void dispose() {
     _scrollTimer?.cancel();
-    _controller.dispose();
     super.dispose();
   }
 
@@ -855,17 +854,18 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
     }
 
     _scrollTimer = Timer(const Duration(milliseconds: 500), () {
-      _controller.animateTo(
-        offset,
-        duration: kThemeAnimationDuration,
-        curve: Curves.fastOutSlowIn,
-      );
+      ScrollableState? scrollable = Scrollable.maybeOf(context);
+      if (scrollable != null) {
+        scrollable.position.animateTo(
+          offset,
+          duration: kThemeAnimationDuration,
+          curve: Curves.fastOutSlowIn,
+        );
+      }
     });
   }
 
   Timer? _scrollTimer;
-
-  final _controller = ScrollController();
 
   Widget _buildVertical() {
     return NotificationListener<ScrollUpdateNotification>(
@@ -876,7 +876,6 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
         return false;
       },
       child: ListView(
-        controller: _controller,
         shrinkWrap: true,
         padding: EdgeInsets.zero,
         physics: widget.physics ?? const ClampingScrollPhysics(),
