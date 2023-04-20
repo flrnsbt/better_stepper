@@ -835,7 +835,7 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
   double _initialOffset = 0;
 
   double _getInitialOffset() {
-    if (_initialOffset == 0) {
+    if (_initialOffset != 0) {
       return _initialOffset;
     }
     final firstStepRenderBox =

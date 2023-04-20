@@ -53,17 +53,25 @@ class _MyWidgetState extends State<MyWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: BetterStepper(
-      controlsBuilder: (context, details) {
-        return SizedBox();
-      },
-      steps: steps,
-      currentStep: _currentStep,
-      onStepTapped: (value) {
-        setState(() {
-          _currentStep = value;
-        });
-      },
+        body: SingleChildScrollView(
+      child: Column(
+        children: [
+          Container(
+              height: 100,
+              color: Colors.grey,
+              alignment: Alignment.center,
+              child: const Text('Hello World')),
+          BetterStepper(
+            steps: steps,
+            currentStep: _currentStep,
+            onStepTapped: (value) {
+              setState(() {
+                _currentStep = value;
+              });
+            },
+          ),
+        ],
+      ),
     ));
   }
 }
