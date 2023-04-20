@@ -1,10 +1,10 @@
 name: better_stepper
-description: A new Flutter package project.
+description: Material Stepper revised with ability to undo steps and a more accurate scroll behavior with large vertical steps.
 version: 0.0.1
 homepage:
 
 environment:
-  sdk: '>=2.19.6 <3.0.0'
+  sdk: ">=2.19.6 <3.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
