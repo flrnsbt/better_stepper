@@ -758,7 +758,6 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
 
   Widget _buildVerticalHeader(int index) {
     return Container(
-      key: _keys[index],
       margin: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Row(
         children: <Widget>[
@@ -847,18 +846,11 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
 
           if (box != null && scrollable != null) {
             final currentScrollPosition = scrollable.position;
-            final viewport = RenderAbstractViewport.of(box);
-            // final pixels = currentScrollPosition.pixels;
-            final minScrollExtent = currentScrollPosition.minScrollExtent;
-            final maxScrollExtent = currentScrollPosition.maxScrollExtent;
+            final pixels = currentScrollPosition.pixels;
 
-            double offset = clampDouble(
-                viewport.getOffsetToReveal(box, 0.0).offset,
-                minScrollExtent,
-                maxScrollExtent);
-            // if (offset > pixels) {
-            //   offset = pixels;
-            // }
+            double offset =
+                box.getTransformTo(null).getTranslation().y + pixels;
+
             currentScrollPosition.animateTo(
               offset,
               duration: kThemeAnimationDuration,
@@ -888,6 +880,7 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
         children: <Widget>[
           for (int i = 0; i < widget.steps.length; i += 1)
             Column(
+              key: _keys[i],
               children: <Widget>[
                 InkWell(
                   onTap: widget.steps[i].state != BetterStepState.disabled
