@@ -56,7 +56,6 @@ import 'package:flutter/material.dart'
         Radius,
         RoundedRectangleBorder,
         Row,
-        ScrollController,
         ScrollPhysics,
         Size,
         SizedBox,
@@ -71,8 +70,6 @@ import 'package:flutter/material.dart'
         ThemeData,
         TickerProviderStateMixin,
         ValueChanged,
-        ValueListenableBuilder,
-        ValueNotifier,
         Visibility,
         VoidCallback,
         Widget,
@@ -81,7 +78,6 @@ import 'package:flutter/material.dart'
         immutable,
         kThemeAnimationDuration
     hide Stepper, Step;
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 //   * mobile horizontal mode with adding/removing steps
@@ -409,6 +405,10 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
   void didUpdateWidget(BetterStepper oldWidget) {
     super.didUpdateWidget(oldWidget);
     assert(widget.steps.length == oldWidget.steps.length);
+    if (widget.currentStep != oldWidget.currentStep &&
+        widget.currentStep != null) {
+      _scrollTo(widget.currentStep!);
+    }
 
     for (int i = 0; i < oldWidget.steps.length; i += 1) {
       _oldStates[i] = oldWidget.steps[i].state;
@@ -889,12 +889,9 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
                           // In the vertical case we need to scroll to the newly tapped
                           // step.
                           if (widget.currentStep != i) {
-                            if (widget.onStepTapped != null) {
-                              widget.onStepTapped!(i);
-                              _scrollTo(i);
-                            }
+                            widget.onStepTapped?.call(i);
                           } else {
-                            widget.onStepTapped!(null);
+                            widget.onStepTapped?.call(null);
                           }
                         }
                       : null,
