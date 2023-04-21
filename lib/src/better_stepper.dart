@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
     show
         Align,
@@ -78,6 +79,7 @@ import 'package:flutter/material.dart'
         immutable,
         kThemeAnimationDuration
     hide Stepper, Step;
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 //   * mobile horizontal mode with adding/removing steps
@@ -405,13 +407,13 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
   void didUpdateWidget(BetterStepper oldWidget) {
     super.didUpdateWidget(oldWidget);
     assert(widget.steps.length == oldWidget.steps.length);
+    for (int i = 0; i < oldWidget.steps.length; i += 1) {
+      _oldStates[i] = oldWidget.steps[i].state;
+    }
+    _scrollTimer?.cancel();
     if (widget.currentStep != oldWidget.currentStep &&
         widget.currentStep != null) {
       _scrollTo(widget.currentStep!);
-    }
-
-    for (int i = 0; i < oldWidget.steps.length; i += 1) {
-      _oldStates[i] = oldWidget.steps[i].state;
     }
   }
 
@@ -831,37 +833,40 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
     _scrollTimer?.cancel();
   }
 
-  final _heights = <int, double>{};
-  double _initialOffset = 0;
-
-  double _getInitialOffset() {
-    if (_initialOffset != 0) {
-      return _initialOffset;
-    }
-    final firstStepRenderBox =
-        _keys[0].currentContext?.findRenderObject() as RenderBox?;
-    final firstStepPosition = firstStepRenderBox?.localToGlobal(Offset.zero);
-    _initialOffset = firstStepPosition?.dy ?? 0;
-    return _initialOffset;
-  }
-
   void _scrollTo(int index) {
-    double offset = _getInitialOffset();
-    for (int i = 0; i < index; i++) {
-      final height = _heights[i] ?? _keys[i].currentContext?.size?.height ?? 0;
-      _heights[i] = height;
-      offset += height;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollTimer = Timer(const Duration(milliseconds: 500), () {
+        final widgetContext = _keys[index].currentContext;
+        if (widgetContext != null) {
+          // Scrollable.ensureVisible(context,
+          //     duration: const Duration(milliseconds: 500),
+          //     alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+          //     curve: Curves.easeInOut);
+          ScrollableState? scrollable = Scrollable.maybeOf(context);
+          final RenderObject? box = widgetContext.findRenderObject();
 
-    _scrollTimer = Timer(const Duration(milliseconds: 500), () {
-      ScrollableState? scrollable = Scrollable.maybeOf(context);
-      if (scrollable != null) {
-        scrollable.position.animateTo(
-          offset,
-          duration: kThemeAnimationDuration,
-          curve: Curves.fastOutSlowIn,
-        );
-      }
+          if (box != null && scrollable != null) {
+            final currentScrollPosition = scrollable.position;
+            final viewport = RenderAbstractViewport.of(box);
+            // final pixels = currentScrollPosition.pixels;
+            final minScrollExtent = currentScrollPosition.minScrollExtent;
+            final maxScrollExtent = currentScrollPosition.maxScrollExtent;
+
+            double offset = clampDouble(
+                viewport.getOffsetToReveal(box, 0.0).offset,
+                minScrollExtent,
+                maxScrollExtent);
+            // if (offset > pixels) {
+            //   offset = pixels;
+            // }
+            currentScrollPosition.animateTo(
+              offset,
+              duration: kThemeAnimationDuration,
+              curve: Curves.fastOutSlowIn,
+            );
+          }
+        }
+      });
     });
   }
 
@@ -878,6 +883,7 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
       child: ListView(
         shrinkWrap: true,
         padding: EdgeInsets.zero,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
         physics: widget.physics ?? const ClampingScrollPhysics(),
         children: <Widget>[
           for (int i = 0; i < widget.steps.length; i += 1)
@@ -888,11 +894,11 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
                       ? () {
                           // In the vertical case we need to scroll to the newly tapped
                           // step.
+                          int? index;
                           if (widget.currentStep != i) {
-                            widget.onStepTapped?.call(i);
-                          } else {
-                            widget.onStepTapped?.call(null);
+                            index = i;
                           }
+                          widget.onStepTapped?.call(index);
                         }
                       : null,
                   canRequestFocus:
