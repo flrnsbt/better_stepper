@@ -410,7 +410,6 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
     for (int i = 0; i < oldWidget.steps.length; i += 1) {
       _oldStates[i] = oldWidget.steps[i].state;
     }
-    _scrollTimer?.cancel();
     if (widget.currentStep != oldWidget.currentStep &&
         widget.currentStep != null) {
       _scrollTo(widget.currentStep!);
@@ -607,7 +606,6 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
           children: <Widget>[
             TextButton(
               onPressed: () {
-                _cancelTimers();
                 widget.onStepContinue?.call();
               },
               style: ButtonStyle(
@@ -638,7 +636,6 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
               margin: const EdgeInsetsDirectional.only(start: 8.0),
               child: TextButton(
                 onPressed: () {
-                  _cancelTimers();
                   widget.onStepCancel?.call();
                 },
                 style: TextButton.styleFrom(
@@ -828,11 +825,9 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
     );
   }
 
-  void _cancelTimers() {
-    _scrollTimer?.cancel();
-  }
-
   void _scrollTo(int index) {
+    _scrollTimer?.cancel();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollTimer = Timer(const Duration(milliseconds: 500), () {
         final widgetContext = _keys[index].currentContext;
@@ -868,7 +863,7 @@ class _StepperState extends State<BetterStepper> with TickerProviderStateMixin {
     return NotificationListener<ScrollUpdateNotification>(
       onNotification: (notification) {
         if (notification.dragDetails != null) {
-          _cancelTimers();
+          _scrollTimer?.cancel();
         }
         return false;
       },
